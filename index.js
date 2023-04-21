@@ -46,7 +46,7 @@ async function main() {
 
       const messages = {
         greeting:
-          "Привет, солнышко! Если тебе захочется щипотку любви и телпа, то смело пиши мне! А также периодически я буду писать тебе и попытаюсь сделать счастливее!",
+          "Привет, солнышко! Если тебе захочется щипотку любви и тепла, то смело пиши мне! А также периодически я буду писать тебе и попытаюсь сделать счастливее!",
         changedMind: "Супер! Малыш, я рад, что ты передумала!",
         alreadySubscribed:
           "Хорошая моя, ты уже подписалась на рассылку моих любовных сообщений!",
@@ -57,6 +57,7 @@ async function main() {
         if (!exists) {
           await insertMember({ chat_id, username });
           bot.sendMessage(chat_id, messages.greeting);
+          console.log("NEW USER ADDED: " + username);
         } else if (!(await isUserEnabled({ chat_id }))) {
           await updateMember({ chat_id, update: { enabled: true } });
           bot.sendMessage(chat_id, messages.changedMind);
@@ -131,11 +132,11 @@ async function main() {
       sendScheduledMessages.bind(this, "frequent")
     ); // every 2 hours
     schedule.scheduleJob(
-      "0 9 * * *",
+      "0 6 * * *",
       sendScheduledMessages.bind(this, "morning")
     ); // every day 09:00
     schedule.scheduleJob(
-      "0 23 * * *",
+      "30 20 * * *",
       sendScheduledMessages.bind(this, "night")
     ); // every day 23:00
   } catch (e) {
@@ -280,7 +281,10 @@ async function insertMessage({
 
 async function getMembers({}) {
   try {
-    return await database.collection("members").find().toArray();
+    return await database
+      .collection("members")
+      .find({ enabled: true })
+      .toArray();
   } catch (e) {
     console.log(e);
     console.warn("NO MEMBERS FOUND IN THE DATABASE");
