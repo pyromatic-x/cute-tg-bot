@@ -1,10 +1,12 @@
 const TelegramBot = require("node-telegram-bot-api");
 const { MongoClient } = require("mongodb");
 const schedule = require("node-schedule");
+
 require("dotenv").config();
 
 const TOKEN = process.env.TOKEN;
 const URI = process.env.URI;
+const CATS = process.env.CATS_API;
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 const client = new MongoClient(URI);
@@ -77,6 +79,24 @@ async function main() {
       }
     });
 
+    bot.onText(/\/cat/, async (msg) => {
+      const chat_id = msg.chat.id;
+      const username = msg.chat.username;
+
+      try {
+        bot.sendAnimation(chat_id, CATS + Math.random());
+
+        insertMessage({
+          to: { chat_id, username },
+          from: { chat_id: "BOT", username: "BOT" },
+          message: "cat",
+          type: "on-cat",
+        });
+      } catch (e) {
+        console.error(e);
+        console.warn("ERROR DURING ONCAT BY ", chat_id + " " + username);
+      }
+    });
     bot.onText(/\/stop/, async (msg) => {
       const chat_id = msg.chat.id;
       const username = msg.chat.username;
@@ -114,18 +134,21 @@ async function main() {
       }
     });
 
-    bot.onText(/^(?!.*\/start)(?!.*\/stop).*\//, async (msg, match) => {
-      const chat_id = msg.chat.id;
-      const username = msg.chat.username;
+    bot.onText(
+      /^(?!.*\/start)(?!.*\/stop)(?!.*\/cat).*\//,
+      async (msg, match) => {
+        const chat_id = msg.chat.id;
+        const username = msg.chat.username;
 
-      bot.sendMessage(chat_id, "Я тебя не понимаю, заюш :-(");
-      insertMessage({
-        from: { chat_id, username },
-        to: { chat_id: "BOT", username: "BOT" },
-        message: match?.input || undefined,
-        type: "non-supported-command",
-      });
-    });
+        bot.sendMessage(chat_id, "Я тебя не понимаю, заюш :-(");
+        insertMessage({
+          from: { chat_id, username },
+          to: { chat_id: "BOT", username: "BOT" },
+          message: match?.input || undefined,
+          type: "non-supported-command",
+        });
+      }
+    );
 
     schedule.scheduleJob(
       "0 */2 * * *",
