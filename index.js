@@ -170,10 +170,10 @@ async function sendScheduledMessages(type) {
           await bot.sendSticker(chat_id, sticker);
 
           insertMessage({
-            from: { chat_id, username },
-            to: { chat_id: "BOT", username: "BOT" },
-            message: "/stop",
-            type: "on-stop",
+            to: { chat_id, username },
+            from: { chat_id: "BOT", username: "BOT" },
+            message: text,
+            type,
           });
 
           console.log(`Sent ${type} message to -> ` + chat_id);
