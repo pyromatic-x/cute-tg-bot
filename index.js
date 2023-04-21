@@ -1,12 +1,14 @@
 const TelegramBot = require("node-telegram-bot-api");
 const { MongoClient } = require("mongodb");
 const schedule = require("node-schedule");
+const { default: axios } = require("axios");
 
 require("dotenv").config();
 
 const TOKEN = process.env.TOKEN;
 const URI = process.env.URI;
 const CATS = process.env.CATS_API;
+const DOGS = process.env.DOGS_API;
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 const client = new MongoClient(URI);
@@ -89,12 +91,63 @@ async function main() {
         insertMessage({
           to: { chat_id, username },
           from: { chat_id: "BOT", username: "BOT" },
-          message: "cat",
-          type: "on-cat",
+          message: "dog",
+          type: "on-dog",
+        });
+      } catch (e) {
+        console.error(e);
+        console.warn("ERROR DURING ONDOG BY ", chat_id + " " + username);
+      }
+    });
+
+    bot.onText(/\/dog/, async (msg) => {
+      const chat_id = msg.chat.id;
+      const username = msg.chat.username;
+
+      try {
+        const request = await axios.get(DOGS);
+        const data = await request.data;
+
+        bot.sendPhoto(chat_id, data.message);
+
+        insertMessage({
+          to: { chat_id, username },
+          from: { chat_id: "BOT", username: "BOT" },
+          message: "dog",
+          type: "on-dog",
         });
       } catch (e) {
         console.error(e);
         console.warn("ERROR DURING ONCAT BY ", chat_id + " " + username);
+      }
+    });
+
+    bot.onText(/\/reminder/, async (msg) => {
+      const chat_id = msg.chat.id;
+      const username = msg.chat.username;
+
+      try {
+        const message =
+          "Да ты ж мое золотце, сейчас я этому бандиту задам жару и он наконец напишете тебе, честное слово!";
+        const sticker = await randomSticker({});
+
+        await bot.sendMessage(chat_id, message);
+        await bot.sendSticker(chat_id, sticker);
+
+        bot.sendMessage(
+          64752337,
+          `@${username} ждет от тебя любви, вонючка, напиши ей немедленно!`
+        );
+
+        insertMessage({
+          from: { chat_id, username },
+          to: { chat_id: "BOT", username: "BOT" },
+          message: message,
+          type: "on-reminder",
+        });
+      } catch (e) {
+        console.error(e);
+        console.warn("ERROR DURING ONSTOP BY ", chat_id + " " + username);
       }
     });
     bot.onText(/\/stop/, async (msg) => {
@@ -135,7 +188,7 @@ async function main() {
     });
 
     bot.onText(
-      /^(?!.*\/start)(?!.*\/stop)(?!.*\/cat).*\//,
+      /^(?!.*\/start)(?!.*\/stop)(?!.*\/cat)(?!.*\/dog)(?!.*\/reminder).*\//,
       async (msg, match) => {
         const chat_id = msg.chat.id;
         const username = msg.chat.username;
